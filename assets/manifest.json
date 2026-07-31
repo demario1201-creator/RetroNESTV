@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "cartridges": [
+    { "id": "super-mario",        "name": "超级玛丽",         "file": "assets/roms/super-mario.nes",        "cover": "" },
+    { "id": "contra-2",           "name": "魂斗罗2 中文",      "file": "assets/roms/contra-2.nes",           "cover": "" },
+    { "id": "battle-city-1990",   "name": "坦克1990",         "file": "assets/roms/battle-city-1990.nes",   "cover": "" },
+    { "id": "nekketsu-soccer",    "name": "热血进行曲 中文版",  "file": "assets/roms/nekketsu-soccer.nes",    "cover": "" }
+  ]
+}

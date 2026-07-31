@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1C1813" />
+  <title>复古小霸王游戏机 · 在网页中寻回小时候的快乐</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body data-state="idle" tabindex="-1">
+  <header class="site-header">
+    <h1 class="logo">复古小霸王游戏机</h1>
+    <p class="subtitle">在网页中寻回小时候的快乐</p>
+  </header>
+
+  <!-- 左上角：主题灯泡（默认亮=白天，点击熄灭=暗夜）-->
+  <button id="theme-toggle" class="bulb-btn is-lit" type="button" aria-pressed="false" aria-label="切换暗夜主题" title="点击切换 暗夜 / 白天">
+    <svg class="bulb-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <g class="bulb-rays">
+        <line x1="12" y1="0.5" x2="12" y2="3.5"/>
+        <line x1="3.5" y1="3.5" x2="5.5" y2="5.5"/>
+        <line x1="0.5" y1="12" x2="3.5" y2="12"/>
+        <line x1="3.5" y1="20.5" x2="5.5" y2="18.5"/>
+        <line x1="20.5" y1="3.5" x2="18.5" y2="5.5"/>
+        <line x1="23.5" y1="12" x2="20.5" y2="12"/>
+        <line x1="20.5" y1="20.5" x2="18.5" y2="18.5"/>
+      </g>
+      <circle class="bulb-glass" cx="12" cy="10" r="6"/>
+      <rect class="bulb-base" x="9" y="16" width="6" height="2.2" rx="1"/>
+      <rect class="bulb-base" x="9.6" y="18.4" width="4.8" height="1.8" rx="1"/>
+    </svg>
+  </button>
+
+  <!-- 右上角：按键说明 + 设置 -->
+  <div class="top-controls">
+    <button id="help-toggle" class="top-btn" type="button" aria-expanded="false" aria-controls="help-panel">⌨ 按键说明</button>
+    <button id="settings-toggle" class="top-btn" type="button" aria-expanded="false" aria-controls="settings-panel">⚙ 设置</button>
+  </div>
+
+  <!-- 按键说明面板 -->
+  <aside id="help-panel" class="help-panel" role="dialog" aria-label="按键说明" hidden>
+    <div class="help-head">
+      <h2>按键说明</h2>
+      <button id="help-close" type="button" class="help-close" aria-label="关闭">×</button>
+    </div>
+    <div class="help-cols">
+      <div class="help-col">
+        <h3>键盘</h3>
+        <ul id="help-keys"><!-- 由 JS 按当前按键绑定动态渲染 --></ul>
+      </div>
+      <div class="help-col">
+        <h3>触屏（移动端）</h3>
+        <ul>
+          <li><b>方向键</b>：左侧 D-Pad</li>
+          <li><b>SEL / STA</b>：中间两键</li>
+          <li><b>A / B</b>：右侧两键</li>
+          <li><b>AA / BB</b>：A/B 上方连发键，按住连发</li>
+          <li class="help-note">桌面端不显示虚拟手柄；键盘连发 U/I 始终可用。</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 设置面板 -->
+  <aside id="settings-panel" class="settings-panel" role="dialog" aria-label="设置" hidden>
+    <div class="settings-head">
+      <h2>设置</h2>
+      <button id="settings-close" type="button" class="settings-close" aria-label="关闭">×</button>
+    </div>
+
+    <section class="settings-section">
+      <h3>声音调节</h3>
+      <div class="settings-row">
+        <label for="set-volume">音量</label>
+        <input id="set-volume" type="range" min="0" max="100" value="80" />
+        <span id="set-volume-val" class="settings-val">80%</span>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h3>CRT 强度</h3>
+      <div class="settings-row">
+        <label for="set-crt">档位</label>
+        <select id="set-crt">
+          <option value="low">低（省电）</option>
+          <option value="mid">中（默认）</option>
+          <option value="high">高（旗舰）</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h3>屏幕雪花颜色</h3>
+      <div class="settings-row settings-radio">
+        <label><input type="radio" name="snow" value="green" checked /> 黑绿雪花</label>
+        <label><input type="radio" name="snow" value="white" /> 经典黑白雪花</label>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h3>按键自定义</h3>
+      <p class="settings-hint">点击右侧按键 → 按下新键即可重新映射（Esc 取消）</p>
+      <div id="key-bind-list" class="key-bind-list"></div>
+      <button id="key-reset" type="button" class="ghost-btn">恢复默认按键</button>
+    </section>
+  </aside>
+
+  <main class="stage">
+    <!-- 电视机（拖拽落点 + 点击开机）-->
+    <div id="tv" class="tv" role="button" tabindex="0" aria-label="电视机屏幕，卡带就绪后点击开机">
+      <div id="screen-wrap" class="screen-wrap crt--webgl">
+        <canvas id="screen" class="screen" width="256" height="240" aria-hidden="true"></canvas>
+        <!-- CSS 基线叠层（仅 crt--css 时可见；WebGL 档由着色器完成）-->
+        <div class="crt-overlay crt-scanlines" aria-hidden="true"></div>
+        <div class="crt-overlay crt-grille" aria-hidden="true"></div>
+        <div class="crt-overlay crt-vignette" aria-hidden="true"></div>
+        <div class="crt-overlay crt-bloom" aria-hidden="true"></div>
+        <div class="crt-overlay crt-noise" aria-hidden="true"></div>
+        <div class="crt-overlay crt-roll" aria-hidden="true"></div>
+      </div>
+      <!-- 电视机底檐控制条（装饰）-->
+      <div class="tv-controls" aria-hidden="true">
+        <span class="power-led"></span>
+        <span class="knob"></span><span class="knob"></span>
+        <span class="speaker"></span>
+      </div>
+    </div>
+
+    <!-- 小霸王机身（装饰 + 卡带锚点）-->
+    <div class="console-body" aria-hidden="true">
+      <div class="cart-slot"></div>
+      <div class="controller-ports"><span></span><span></span></div>
+      <div class="console-btns"><span class="power"></span><span class="reset"></span></div>
+      <div class="console-label">FAMILY TV-GAME</div>
+    </div>
+
+    <!-- 卡带选择面板：小霸王学习机风格 -->
+    <section id="cartridge-panel" class="cartridge-panel" aria-label="卡带选择">
+      <div class="subor-top">
+        <div class="subor-logo"><span class="subor-logo-mark">小霸王</span></div>
+        <div id="subor-warning" class="subor-warning">注意：插拔卡带请先关闭电源</div>
+        <div class="subor-meta">
+          <span class="subor-name">中英文电脑学习机</span>
+          <span class="subor-model">SB-918</span>
+        </div>
+      </div>
+      <div class="subor-body">
+        <div id="subor-brand" class="subor-brand" role="button" tabindex="0" aria-label="SUBOR，等同点击电视开机">SUBOR</div>
+        <p id="status" class="status" role="status" aria-live="polite">待机中，请插入卡带</p>
+        <div class="cart-bay">
+          <div class="source-buttons">
+            <button id="source-builtin" type="button" class="source-btn">内置卡带</button>
+            <button id="source-upload" type="button" class="source-btn">上传文件</button>
+          </div>
+          <p class="drop-hint">或将 <code>.nes</code> 文件拖拽到电视上</p>
+          <p id="cartridge-name" class="cartridge-name" hidden></p>
+          <p id="boot-hint" class="boot-hint" hidden>▶ 点击电视开机</p>
+        </div>
+      </div>
+      <input id="file-input" type="file" accept=".nes,.NES" class="visually-hidden" aria-hidden="true" tabindex="-1" />
+    </section>
+
+    <!-- 浏览内置卡带 -->
+    <section id="browsing" class="browsing" hidden aria-label="内置卡带浏览">
+      <div class="browsing-head">
+        <h2>内置卡带</h2>
+        <button id="browsing-back" type="button" class="ghost-btn">返回</button>
+      </div>
+      <div id="browsing-grid" class="browsing-grid"></div>
+    </section>
+
+    <!-- 错误提示 -->
+    <div id="error-toast" class="error-toast" role="alert" hidden></div>
+
+  </main>
+
+  <!-- 移动端虚拟按键：左=方向键 中=SEL/STA 右=A/B（含连发键） -->
+  <div id="mobile-pad" class="mobile-pad" aria-label="虚拟手柄">
+    <div class="dpad">
+      <button data-intent="up" type="button" aria-label="上">▲</button>
+      <button data-intent="left" type="button" aria-label="左">◀</button>
+      <button data-intent="right" type="button" aria-label="右">▶</button>
+      <button data-intent="down" type="button" aria-label="下">▼</button>
+    </div>
+    <div class="ss">
+      <button data-intent="select" type="button" aria-label="Select 选择键">SEL</button>
+      <button data-intent="start" type="button" aria-label="Start 开始键">STA</button>
+    </div>
+    <div class="ab">
+      <div class="ab-cluster">
+        <button class="turbo-btn" data-turbo="b" type="button" aria-label="B 连发键（按住连发）">BB</button>
+        <button data-intent="b" type="button" aria-label="B 按钮">B</button>
+      </div>
+      <div class="ab-cluster">
+        <button class="turbo-btn" data-turbo="a" type="button" aria-label="A 连发键（按住连发）">AA</button>
+        <button data-intent="a" type="button" aria-label="A 按钮">A</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">双击 index.html 或静态服务器即可游玩 · 内置 4 款卡带，无需联网</footer>
+
+  <!-- 经典脚本（非 ES module，使 file:// 双击也能跑）-->
+  <script src="vendor/jsnes.min.js"></script>
+  <script src="src/config.js"></script>
+  <script src="src/cartridge.js"></script>
+  <script src="src/builtin-cartridges.js"></script>
+  <script src="src/emulator.js"></script>
+  <script src="src/crt.js"></script>
+  <script src="src/input.js"></script>
+  <script src="src/boot.js"></script>
+  <script src="src/ui.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>
