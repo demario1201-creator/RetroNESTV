@@ -168,7 +168,8 @@
   var DEFAULTS = {
     volume: 0.8,        // 音量 0~1
     crtTier: 'mid',      // low / mid / high
-    snowMode: 'green'    // 'green' 黑绿雪花 / 'white' 经典黑白雪花
+    snowMode: 'green',  // 'green' 黑绿雪花 / 'white' 经典黑白雪花
+    clarity: 70         // 清晰度 0~100：越高色散重影/辉光越收敛、画面越锐利（默认已适度提升清晰度，缓解默认重影）
   };
 
   var CONFIG = {

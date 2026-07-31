@@ -31,6 +31,7 @@
     'uniform float uFlicker;',   // 闪烁开关
     'uniform float uRoll;',      // 滚屏周期秒(0=关)
     'uniform float uSnow;',      // 待机雪花配色：0=黑绿(磷光绿) 1=经典黑白
+    'uniform float uSharpness;',// 清晰度 0~1：越高色散重影/辉光越收敛、画面越锐利
     'float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }',
     'void main(){',
     '  vec2 uv = vUv;',
@@ -50,18 +51,21 @@
     '  } else {',
     '    float a = uAberr/256.0;',                        // 色散（边缘强）
     '    float rad = length(cc);',
-    '    float ab = a*(0.4+rad);',
+    '    float sh = uSharpness;',                         // 清晰度 0~1
+    '    float ab = a*(0.4+rad)*(1.0 - sh*0.92);',        // 清晰度越高，色散(重影)越小（最低保留 8%）
     '    float rC = texture2D(uTex, uv+vec2(ab,0.0)).r;',
     '    float gC = texture2D(uTex, uv).g;',
     '    float bC = texture2D(uTex, uv-vec2(ab,0.0)).b;',
+    '    vec3 center = texture2D(uTex, uv).rgb;',
     '    col = vec3(rC,gC,bC);',
-    '    float spread = 2.0/256.0;',                       // 廉价辉光
-    '    vec3 bloom = texture2D(uTex, uv+vec2(spread,0.0)).rgb;',
-    '    bloom += texture2D(uTex, uv-vec2(spread,0.0)).rgb;',
-    '    bloom += texture2D(uTex, uv+vec2(0.0,spread)).rgb;',
-    '    bloom += texture2D(uTex, uv-vec2(0.0,spread)).rgb;',
-    '    bloom *= 0.25;',
-    '    col += bloom*uBloom*0.4;',
+    '    float spread = 2.0/256.0;',                       // 廉价辉光（同时作锐化基准）
+    '    vec3 blur = texture2D(uTex, uv+vec2(spread,0.0)).rgb;',
+    '    blur += texture2D(uTex, uv-vec2(spread,0.0)).rgb;',
+    '    blur += texture2D(uTex, uv+vec2(0.0,spread)).rgb;',
+    '    blur += texture2D(uTex, uv-vec2(0.0,spread)).rgb;',
+    '    blur *= 0.25;',
+    '    col += blur*uBloom*mix(1.0, 0.28, sh);',         // 清晰度越高，辉光越收敛
+    '    col += (center - blur) * sh * 0.5;',             // 锐化：unsharp mask，抵消线性放大/辉光糊感
     '  }',
     '  float scan = sin(uv.y*240.0*3.14159)*0.5+0.5;',    // 扫描线
     '  col *= 1.0 - uScan*(1.0-scan);',
@@ -108,6 +112,7 @@
     this.tierName = this.reducedMotion ? CONFIG.CRT.reducedMotionTier : CONFIG.CRT.defaultTier;
     this.source = null;       // 内容源 canvas（null=待机雪花）
     this.snowMode = (CONFIG.DEFAULTS && CONFIG.DEFAULTS.snowMode) ? CONFIG.DEFAULTS.snowMode : 'green';
+    this.clarity = (CONFIG.DEFAULTS && CONFIG.DEFAULTS.clarity != null) ? (CONFIG.DEFAULTS.clarity / 100) : 0.7;
     this.time = 0;
     this._raf = null;
     this.gl = null;
@@ -115,6 +120,7 @@
     this._noiseCanvas = null;
     this._initWebGL();
     if (this.gl) this.mode = 'webgl';
+    this._applyClarityToDOM();
     this._applyTierToDOM();
     this.resize();
     this._start();
@@ -170,7 +176,8 @@
         noise: gl.getUniformLocation(prog, 'uNoise'),
         flicker: gl.getUniformLocation(prog, 'uFlicker'),
         roll: gl.getUniformLocation(prog, 'uRoll'),
-        snow: gl.getUniformLocation(prog, 'uSnow')
+        snow: gl.getUniformLocation(prog, 'uSnow'),
+        sharpness: gl.getUniformLocation(prog, 'uSharpness')
       };
       gl.uniform1i(this.u.tex, 0);
     } catch (e) {
@@ -204,6 +211,19 @@
     this.snowMode = (mode === 'white') ? 'white' : 'green';
   };
   CRT.prototype.getSnowMode = function () { return this.snowMode; };
+
+  // 清晰度 0~1：越高色散重影/辉光越收敛、画面越锐利
+  CRT.prototype.setClarity = function (v01) {
+    if (v01 == null || isNaN(v01)) v01 = 0.7;
+    v01 = Math.max(0, Math.min(1, v01));
+    this.clarity = v01;
+    this._applyClarityToDOM();
+  };
+  CRT.prototype.getClarity = function () { return this.clarity; };
+  CRT.prototype._applyClarityToDOM = function () {
+    if (!this.container) return;
+    this.container.style.setProperty('--crt-clarity', this.clarity.toFixed(3));
+  };
 
   CRT.prototype.setReducedMotion = function (on) {
     this.reducedMotion = !!on;
@@ -312,6 +332,7 @@
     gl.uniform1f(this.u.flicker, p.flicker ? 1.0 : 0.0);
     gl.uniform1f(this.u.roll, p.roll);
     gl.uniform1f(this.u.snow, this.snowMode === 'white' ? 1.0 : 0.0);
+    gl.uniform1f(this.u.sharpness, this.clarity);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   };
 

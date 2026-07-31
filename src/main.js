@@ -119,6 +119,8 @@
     var volEl = document.getElementById('set-volume');
     var volVal = document.getElementById('set-volume-val');
     var crtSel = document.getElementById('set-crt');
+    var clarityEl = document.getElementById('set-clarity');
+    var clarityVal = document.getElementById('set-clarity-val');
     var keyList = document.getElementById('key-bind-list');
     var keyReset = document.getElementById('key-reset');
     var snowEls = document.querySelectorAll('input[name="snow"]');
@@ -151,6 +153,7 @@
           volume: emulator.getVolume(),
           crtTier: crt.getTier(),
           snowMode: crt.getSnowMode(),
+          clarity: Math.round(crt.getClarity() * 100),
           bindings: input.getBindings(),
           turbo: input.getTurboBindings(),
           theme: document.body.classList.contains('theme-night') ? 'night' : 'day'
@@ -167,6 +170,13 @@
       persist();
     }
     function applyCrt(name) { crt.setTier(name); if (crtSel) crtSel.value = name; persist(); }
+    function applyClarity(v) {
+      v = Math.round(v);
+      crt.setClarity(v / 100);
+      if (clarityVal) clarityVal.textContent = v + '%';
+      if (clarityEl) clarityEl.value = v;
+      persist();
+    }
     function applySnow(mode) {
       crt.setSnowMode(mode);
       snowEls.forEach(function (r) { r.checked = (r.value === mode); });
@@ -210,6 +220,7 @@
     }
     if (volEl) volEl.addEventListener('input', function () { applyVolume(+volEl.value); });
     if (crtSel) crtSel.addEventListener('change', function () { applyCrt(crtSel.value); });
+    if (clarityEl) clarityEl.addEventListener('input', function () { applyClarity(+clarityEl.value); });
     snowEls.forEach(function (r) {
       r.addEventListener('change', function () { if (r.checked) applySnow(r.value); });
     });
@@ -245,6 +256,7 @@
         if (typeof d.volume === 'number') emulator.setVolume(d.volume);
         if (d.crtTier) crt.setTier(d.crtTier);
         if (d.snowMode) crt.setSnowMode(d.snowMode);
+        if (typeof d.clarity === 'number') crt.setClarity(d.clarity / 100);
         if (d.bindings && d.turbo) input.applyBindings(d.bindings, d.turbo);
         if (d.theme === 'night') applyTheme(true);
       } catch (e) { /* 忽略损坏数据 */ }
@@ -255,6 +267,8 @@
     if (volVal) volVal.textContent = Math.round(emulator.getVolume() * 100) + '%';
     if (crtSel) crtSel.value = crt.getTier();
     snowEls.forEach(function (r) { r.checked = (r.value === crt.getSnowMode()); });
+    if (clarityEl) clarityEl.value = Math.round(crt.getClarity() * 100);
+    if (clarityVal) clarityVal.textContent = Math.round(crt.getClarity() * 100) + '%';
     renderKeyList();
     renderHelp();
   }
