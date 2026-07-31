@@ -18,9 +18,14 @@
 
   function Emulator() {
     this.running = false;
+    this.paused = false;
     this._raf = null;
     this.lastT = 0;
     this.acc = 0;
+
+    // 存档槽：key=slot(1..N)，value={romId, state(jsnes toJSON)}
+    this.states = {};
+    this.currentRomId = null;
     this.volume = (CONFIG.DEFAULTS && CONFIG.DEFAULTS.volume != null) ? CONFIG.DEFAULTS.volume : 0.8;
     this.muted = (this.volume <= 0);
     this.gainNode = null;
@@ -175,14 +180,17 @@
       if (!self.lastT) self.lastT = t;
       var dt = t - self.lastT;
       self.lastT = t;
-      self.acc += dt;
-      var steps = 0;
-      while (self.acc >= FRAME_MS && steps < 4) {
-        self.nes.frame();
-        self.acc -= FRAME_MS;
-        steps++;
+      // 暂停：冻结仿真（画面停在最后一帧），rAF 仍转以维持 CRT/覆盖层
+      if (!self.paused) {
+        self.acc += dt;
+        var steps = 0;
+        while (self.acc >= FRAME_MS && steps < 4) {
+          self.nes.frame();
+          self.acc -= FRAME_MS;
+          steps++;
+        }
+        if (self.acc > FRAME_MS * 4) self.acc = 0; // 防螺旋
       }
-      if (self.acc > FRAME_MS * 4) self.acc = 0; // 防螺旋
       self._raf = global.requestAnimationFrame(loop);
     }
     this._raf = global.requestAnimationFrame(loop);
@@ -199,6 +207,44 @@
     try { this.nes.reset(); } catch (e) { /* 忽略 */ }
     this.audioL.length = 0;
     this.audioR.length = 0;
+    this.paused = false;
+  };
+
+  // ---- 暂停 / 继续 ----
+  Emulator.prototype.pause = function () { this.paused = true; };
+  Emulator.prototype.resume = function () { this.paused = false; };
+  Emulator.prototype.togglePause = function () { this.paused = !this.paused; return this.paused; };
+  Emulator.prototype.isPaused = function () { return this.paused; };
+
+  // 记录当前卡带标识：用于存档归属校验，避免把 A 游戏的存档读进 B 游戏
+  Emulator.prototype.setRomId = function (id) { this.currentRomId = id || null; };
+
+  // ---- 存档 / 读档（jsnes toJSON / fromJSON 整存档）----
+  // slot: 1..N。写入内存槽 + 尝试持久化到 localStorage（超限则仅留内存）。
+  Emulator.prototype.saveState = function (slot) {
+    var snap;
+    try { snap = this.nes.toJSON(); } catch (e) { return { ok: false, error: '序列化失败' }; }
+    var obj = { romId: this.currentRomId, state: snap };
+    this.states[slot] = obj;
+    try {
+      global.localStorage.setItem(CONFIG.STORAGE_PREFIX + 'save.' + slot, JSON.stringify(obj));
+    } catch (e) { /* 配额超限：保留内存存档即可 */ }
+    return { ok: true };
+  };
+
+  // 读档：优先内存槽，回退 localStorage；romId 不匹配当前卡带则视为空槽。
+  Emulator.prototype.loadState = function (slot) {
+    var obj = this.states[slot];
+    if (!obj) {
+      try {
+        var raw = global.localStorage.getItem(CONFIG.STORAGE_PREFIX + 'save.' + slot);
+        if (raw) obj = JSON.parse(raw);
+      } catch (e) { obj = null; }
+    }
+    if (!obj || obj.romId !== this.currentRomId) return { ok: false, error: 'empty' };
+    try { this.nes.fromJSON(obj.state); } catch (e) { return { ok: false, error: '还原失败' }; }
+    if (this.paused) this.resume();
+    return { ok: true };
   };
 
   if (typeof module !== 'undefined' && module.exports) {

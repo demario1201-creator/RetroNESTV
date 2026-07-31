@@ -312,6 +312,38 @@ body[data-state="playing"] .subor-brand {
   margin-bottom: 0;
 }
 
+/* ===== 游玩控制条（仅 playing 态显示）===== */
+.play-controls {
+  display: none;
+  flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+  margin-top: 12px;
+}
+body[data-state="playing"] .play-controls { display: flex; }
+.play-controls .pc-sep { width: 1px; height: 22px; background: var(--subor-edge); opacity: .5; }
+.pc-btn {
+  font: 600 13px/1 'Courier New', 'Press Start 2P', monospace;
+  color: var(--subor-text);
+  background: linear-gradient(180deg, var(--subor-key), var(--subor-bg-dark));
+  border: 2px solid var(--subor-edge); border-radius: 4px;
+  padding: 7px 10px; cursor: pointer; min-width: 44px;
+}
+.pc-btn:hover { filter: brightness(1.08); }
+.pc-btn:active { transform: translateY(1px); }
+.pc-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pc-load { background: linear-gradient(180deg, var(--subor-key-side), var(--subor-bg-dark)); }
+
+/* ===== 暂停覆盖层（仅 is-paused 时显示）===== */
+.pause-overlay {
+  display: none;
+  position: absolute; inset: 0;
+  align-items: center; justify-content: center;
+  font: 700 22px/1 'Courier New', monospace; letter-spacing: 4px;
+  color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.85);
+  background: rgba(0,0,0,.28);
+  pointer-events: none; z-index: 5;
+}
+body.is-paused .pause-overlay { display: flex; }
+
 .cartridge-panel .status {
   margin: 0 0 12px; font-size: 14px; color: var(--subor-text);
   min-height: 1.4em; font-weight: 600;

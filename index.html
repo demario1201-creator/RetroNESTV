@@ -127,6 +127,8 @@
         <div class="crt-overlay crt-bloom" aria-hidden="true"></div>
         <div class="crt-overlay crt-noise" aria-hidden="true"></div>
         <div class="crt-overlay crt-roll" aria-hidden="true"></div>
+        <!-- 暂停覆盖层（仅 is-paused 时显示）-->
+        <div id="pause-overlay" class="pause-overlay" aria-hidden="true">⏸ 暂停中</div>
       </div>
       <!-- 电视机底檐控制条（装饰）-->
       <div class="tv-controls" aria-hidden="true">
@@ -134,6 +136,18 @@
         <span class="knob"></span><span class="knob"></span>
         <span class="speaker"></span>
       </div>
+    </div>
+
+    <!-- 游玩控制条：暂停 / 3 槽存读档（仅游玩中显示）-->
+    <div id="play-controls" class="play-controls" role="group" aria-label="游戏控制">
+      <button id="btn-pause" type="button" class="pc-btn">暂停</button>
+      <span class="pc-sep" aria-hidden="true"></span>
+      <button id="btn-save-1" type="button" class="pc-btn">存1</button>
+      <button id="btn-load-1" type="button" class="pc-btn pc-load">读1</button>
+      <button id="btn-save-2" type="button" class="pc-btn">存2</button>
+      <button id="btn-load-2" type="button" class="pc-btn pc-load">读2</button>
+      <button id="btn-save-3" type="button" class="pc-btn">存3</button>
+      <button id="btn-load-3" type="button" class="pc-btn pc-load">读3</button>
     </div>
 
     <!-- 小霸王机身（装饰 + 卡带锚点）-->

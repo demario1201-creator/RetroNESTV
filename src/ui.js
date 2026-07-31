@@ -98,6 +98,14 @@
     global.addEventListener('keydown', function (e) {
       if (e.code === 'Escape' && self.state === STATES.PLAYING) self.exitToIdle();
     });
+
+    // P 暂停 / 继续（游戏中）
+    global.addEventListener('keydown', function (e) {
+      if (e.code === 'KeyP' && self.state === STATES.PLAYING) {
+        e.preventDefault();
+        self.togglePause();
+      }
+    });
   };
 
   // ---- 状态切换 ----
@@ -135,6 +143,7 @@
     this.crt.setContentSource(null);     // 待机雪花
     this.input.setEnabled(false);
     this._hideError();
+    this._setPausedUI(false);
     this._setState(STATES.IDLE);
     this._announce('待机中，请插入卡带');
     this._updateSuborLabel('SUBOR', '等同点击电视开机');
@@ -274,6 +283,8 @@
 
     var res = this.emulator.loadROM(meta.buffer);
     if (!res.ok) { this._showError(res.error); this._enterIdle(); return; }
+    // 记录卡带标识，用于存档归属校验
+    this.emulator.setRomId(cartLabel);
 
     // 成功：武装就绪
     this.ready = true;
@@ -321,6 +332,36 @@
     this.emulator.stop();
     this.emulator.reset();
     this._enterIdle();
+  };
+
+  // ---- 暂停 / 存档 / 读档（游玩中可用）----
+  UI.prototype._setPausedUI = function (paused) {
+    paused = !!paused;
+    document.body.classList.toggle('is-paused', paused);
+    if (global.CustomEvent) {
+      try { global.dispatchEvent(new CustomEvent('nes-pause', { detail: { paused: paused } })); } catch (e) { /* noop */ }
+    }
+  };
+
+  UI.prototype.togglePause = function () {
+    if (this.state !== STATES.PLAYING) return false;
+    var paused = this.emulator.togglePause();
+    this._setPausedUI(paused);
+    this._announce(paused ? '已暂停' : '继续');
+    return paused;
+  };
+
+  UI.prototype.save = function (slot) {
+    if (this.state !== STATES.PLAYING) return;
+    var r = this.emulator.saveState(slot);
+    this._announce(r.ok ? ('已存档 ' + slot) : '存档失败');
+  };
+
+  UI.prototype.load = function (slot) {
+    if (this.state !== STATES.PLAYING) return;
+    var r = this.emulator.loadState(slot);
+    if (r.ok) { this._setPausedUI(false); this._announce('已读档 ' + slot); }
+    else this._announce('槽位 ' + slot + ' 无存档');
   };
 
   if (typeof module !== 'undefined' && module.exports) {

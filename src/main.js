@@ -247,6 +247,21 @@
       }
     }, true);
 
+    // ---- 游玩控制条：暂停 / 3 槽存读档 ----
+    var btnPause = document.getElementById('btn-pause');
+    function bindSlot(prefix, slot) {
+      var b = document.getElementById('btn-' + prefix + '-' + slot);
+      if (b) b.addEventListener('click', function () { ui[prefix](slot); });
+    }
+    if (btnPause) {
+      btnPause.addEventListener('click', function () { ui.togglePause(); });
+    }
+    [1, 2, 3].forEach(function (s) { bindSlot('save', s); bindSlot('load', s); });
+    // 暂停状态变化时同步按钮文案（键盘 P 触发也能同步）
+    global.addEventListener('nes-pause', function (e) {
+      if (btnPause) btnPause.textContent = e.detail.paused ? '继续' : '暂停';
+    });
+
     // ---- 载入持久化设置 ----
     (function loadSettings() {
       try {
