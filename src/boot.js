@@ -32,6 +32,7 @@
   Boot.prototype.play = function (onDone) {
     var self = this;
     this.onDone = onDone;
+    this._finished = false;   // 允许重复播放：重置一次性完成标志
     if (this.crt) this.crt.setContentSource(this.canvas);
 
     if (this.reducedMotion) {
