@@ -130,24 +130,22 @@
         <!-- 暂停覆盖层（仅 is-paused 时显示）-->
         <div id="pause-overlay" class="pause-overlay" aria-hidden="true">⏸ 暂停中</div>
       </div>
-      <!-- 电视机底檐控制条（装饰）-->
-      <div class="tv-controls" aria-hidden="true">
-        <span class="power-led"></span>
-        <span class="knob"></span><span class="knob"></span>
-        <span class="speaker"></span>
+      <!-- 电视机底檐控制条：左侧装饰，右侧游戏控制键（仅游玩中显示）-->
+      <div class="tv-controls">
+        <span class="power-led" aria-hidden="true"></span>
+        <span class="knob" aria-hidden="true"></span><span class="knob" aria-hidden="true"></span>
+        <!-- 游玩控制：暂停 / 3 槽存读档 -->
+        <div id="play-controls" class="play-controls" role="group" aria-label="游戏控制">
+          <button id="btn-pause" type="button" class="pc-btn">暂停</button>
+          <span class="pc-sep" aria-hidden="true"></span>
+          <button id="btn-save-1" type="button" class="pc-btn">存1</button>
+          <button id="btn-load-1" type="button" class="pc-btn pc-load">读1</button>
+          <button id="btn-save-2" type="button" class="pc-btn">存2</button>
+          <button id="btn-load-2" type="button" class="pc-btn pc-load">读2</button>
+          <button id="btn-save-3" type="button" class="pc-btn">存3</button>
+          <button id="btn-load-3" type="button" class="pc-btn pc-load">读3</button>
+        </div>
       </div>
-    </div>
-
-    <!-- 游玩控制条：暂停 / 3 槽存读档（仅游玩中显示）-->
-    <div id="play-controls" class="play-controls" role="group" aria-label="游戏控制">
-      <button id="btn-pause" type="button" class="pc-btn">暂停</button>
-      <span class="pc-sep" aria-hidden="true"></span>
-      <button id="btn-save-1" type="button" class="pc-btn">存1</button>
-      <button id="btn-load-1" type="button" class="pc-btn pc-load">读1</button>
-      <button id="btn-save-2" type="button" class="pc-btn">存2</button>
-      <button id="btn-load-2" type="button" class="pc-btn pc-load">读2</button>
-      <button id="btn-save-3" type="button" class="pc-btn">存3</button>
-      <button id="btn-load-3" type="button" class="pc-btn pc-load">读3</button>
     </div>
 
     <!-- 小霸王机身（装饰 + 卡带锚点）-->
@@ -161,15 +159,17 @@
     <!-- 卡带选择面板：小霸王学习机风格 -->
     <section id="cartridge-panel" class="cartridge-panel" aria-label="卡带选择">
       <div class="subor-top">
-        <div class="subor-logo"><span class="subor-logo-mark">小霸王</span></div>
-        <div id="subor-warning" class="subor-warning">注意：插拔卡带请先关闭电源</div>
-        <div class="subor-meta">
-          <span class="subor-name">中英文电脑学习机</span>
-          <span class="subor-model">SB-918</span>
+        <div class="subor-head">
+          <div class="subor-logo"><span class="subor-logo-mark">小霸王</span></div>
+          <div id="subor-brand" class="subor-brand" role="button" tabindex="0" aria-label="SUBOR，等同点击电视开机">SUBOR</div>
+          <div class="subor-meta">
+            <span class="subor-name">中英文电脑学习机</span>
+            <span class="subor-model">SB-918</span>
+          </div>
         </div>
+        <div id="subor-warning" class="subor-warning">注意：插拔卡带请先关闭电源</div>
       </div>
       <div class="subor-body">
-        <div id="subor-brand" class="subor-brand" role="button" tabindex="0" aria-label="SUBOR，等同点击电视开机">SUBOR</div>
         <p id="status" class="status" role="status" aria-live="polite">待机中，请插入卡带</p>
         <div class="cart-bay">
           <div class="source-buttons">
